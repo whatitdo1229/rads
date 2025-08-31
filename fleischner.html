@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fleischner Guidelines Nodule Categorizer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+        form {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        select, input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e9ecef;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        #infoIcon {
+            cursor: pointer;
+            color: #007bff;
+            margin-left: 5px;
+        }
+        #riskInfo {
+            display: none;
+            margin-bottom: 15px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Fleischner Guidelines Nodule Categorizer</h1>
+    <form id="noduleForm">
+        <label for="risk">Patient Risk Level: <span id="infoIcon">[i]</span></label>
+        <select id="risk">
+            <option value="low">Low Risk</option>
+            <option value="high">High Risk</option>
+        </select>
+        <div id="riskInfo">
+            <strong>Low-Risk Patients:</strong> Estimated risk of cancer less than 5%. Includes patients with minimal or absent history of smoking and other known risk factors. Patients aged 35 years or younger are considered low risk, with nodules most likely infectious.<br><br>
+            <strong>High-Risk Patients:</strong> Estimated risk of cancer greater than 5%. Includes patients with history of smoking or other known risk factors such as older age, heavy smoking, irregular or spiculated nodule margins, upper lobe location. Patients with known malignancy or immunosuppression are high risk.<br><br>
+            Risk assessment can be performed qualitatively using clinical judgment or quantitatively using a validated model.
+        </div>
+
+        <label for="type">Nodule Type:</label>
+        <select id="type">
+            <option value="solid">Solid</option>
+            <option value="ground-glass">Pure Ground-Glass (Non-Solid)</option>
+            <option value="part-solid">Part-Solid</option>
+        </select>
+
+        <label for="number">Number of Nodules:</label>
+        <select id="number">
+            <option value="single">Single</option>
+            <option value="multiple">Multiple</option>
+        </select>
+
+        <label for="size">Nodule Size (mm, average diameter for small nodules):</label>
+        <input type="number" id="size" min="0" step="0.1">
+
+        <div id="solidComponent" style="display: none;">
+            <label for="solidSize">Solid Component Size (mm):</label>
+            <input type="number" id="solidSize" min="0" step="0.1">
+        </div>
+
+        <label for="perifissural">Is this a perifissural or pleural-based nodule with typical benign morphology (e.g., triangular, oval, smooth)?</label>
+        <input type="checkbox" id="perifissural">
+
+        <button type="button" onclick="calculateRecommendation()">Get Recommendation</button>
+    </form>
+
+    <div id="result"></div>
+
+    <script>
+        document.getElementById('type').addEventListener('change', function() {
+            document.getElementById('solidComponent').style.display = (this.value === 'part-solid') ? 'block' : 'none';
+        });
+
+        document.getElementById('infoIcon').addEventListener('click', function() {
+            var info = document.getElementById('riskInfo');
+            info.style.display = (info.style.display === 'none' || info.style.display === '') ? 'block' : 'none';
+        });
+
+        function calculateRecommendation() {
+            const risk = document.getElementById('risk').value;
+            const type = document.getElementById('type').value;
+            const number = document.getElementById('number').value;
+            const size = parseFloat(document.getElementById('size').value);
+            const perifissural = document.getElementById('perifissural').checked;
+            let recommendation = '';
+
+            if (isNaN(size) || size < 0) {
+                recommendation = 'Please enter a valid nodule size.';
+            } else if (perifissural) {
+                recommendation = 'No routine follow-up required.';
+            } else {
+                if (type === 'solid') {
+                    if (number === 'single') {
+                        if (size < 6) {
+                            if (risk === 'low') {
+                                recommendation = 'No routine follow-up required.';
+                            } else {
+                                recommendation = 'Optional CT at 12 months (particularly with suspicious morphology and/or upper lobe location).';
+                            }
+                        } else if (size < 8) {
+                            recommendation = 'CT at 6-12 months, then ' + (risk === 'low' ? 'consider ' : '') + 'CT at 18-24 months.';
+                        } else {
+                            recommendation = 'Consider CT at 3 months, PET-CT, or tissue sampling.';
+                        }
+                    } else { // multiple
+                        if (size < 6) {
+                            recommendation = 'No routine follow-up required.';
+                        } else {
+                            recommendation = 'CT at 3-6 months, then subsequent management based on the most suspicious nodule(s).';
+                        }
+                    }
+                } else if (type === 'ground-glass') {
+                    if (size < 6) {
+                        recommendation = 'No routine follow-up required.';
+                    } else {
+                        recommendation = 'CT at 3-6 months, then if persistent, CT every 2 years until 5 years.';
+                    }
+                    if (number === 'multiple') {
+                        recommendation += ' Manage based on the most suspicious nodule.';
+                    }
+                } else if (type === 'part-solid') {
+                    const solidSize = parseFloat(document.getElementById('solidSize').value);
+                    if (isNaN(solidSize) || solidSize < 0) {
+                        recommendation = 'Please enter a valid solid component size.';
+                    } else if (size < 6) {
+                        recommendation = 'No routine follow-up required.';
+                    } else {
+                        recommendation = 'CT at 3-6 months, then if persistent and solid component remains <6 mm, annual CT until 5 years.';
+                        if (solidSize >= 6) {
+                            recommendation += ' Note: If solid component ≥6 mm, consider more aggressive options such as PET-CT, biopsy, or resection.';
+                        }
+                    }
+                    if (number === 'multiple') {
+                        recommendation += ' Manage based on the most suspicious nodule.';
+                    }
+                }
+            }
+
+            document.getElementById('result').innerHTML = recommendation;
+        }
+    </script>
+</body>
+</html>
