@@ -130,6 +130,8 @@
 
             if (isNaN(size) || size < 0) {
                 recommendation = 'Please enter a valid nodule size.';
+            } else if (size >= 30) {
+                recommendation = 'Error: Lesions 30mm and above are not considered nodules.';
             } else if (perifissural) {
                 recommendation = 'No routine follow-up required.';
             } else {
@@ -166,6 +168,8 @@
                     const solidSize = parseFloat(document.getElementById('solidSize').value);
                     if (isNaN(solidSize) || solidSize < 0) {
                         recommendation = 'Please enter a valid solid component size.';
+                    } else if (solidSize >= 30) {
+                        recommendation = 'Error: Lesions 30mm and above are not considered nodules.';
                     } else if (size < 6) {
                         recommendation = 'No routine follow-up required.';
                     } else {
