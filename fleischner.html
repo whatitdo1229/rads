@@ -166,7 +166,7 @@
                     }
                 } else if (type === 'part-solid') {
                     const solidSize = parseFloat(document.getElementById('solidSize').value);
-                    if (isNaN(solidSize) || solidSize < 0) {
+                    if (isNaN(solidSize) || solidSize < 0 || solidSize > size) {
                         recommendation = 'Please enter a valid solid component size.';
                     } else if (solidSize >= 30) {
                         recommendation = 'Error: Lesions 30mm and above are not considered nodules.';
